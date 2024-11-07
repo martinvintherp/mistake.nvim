@@ -21,7 +21,7 @@ M.setup = function(opts)
 		vim.cmd("edit " .. opts.custom_dict_file)
 	end, {})
 
-	local function load_chunked_entries(dict_file, entries_per_chunk)
+	local function load_chunked_entries(dict_file, entries_per_chunk, on_complete)
 		local dict = loadfile(dict_file)()
 		local entries = {}
 		for typo, correction in pairs(dict) do
@@ -46,14 +46,19 @@ M.setup = function(opts)
 			index = limit + 1
 			if index <= #entries then
 				vim.defer_fn(load_next_chunk, new_delay)
+			else
+				if on_complete then
+					on_complete()
+				end
 			end
 		end
 
 		load_next_chunk()
 	end
 
-	load_chunked_entries(opts.dict_file, 100)
-	load_chunked_entries(opts.custom_dict_file, 100)
+	load_chunked_entries(opts.dict_file, 100, function()
+		load_chunked_entries(opts.custom_dict_file, 100)
+	end)
 end
 
 return M
